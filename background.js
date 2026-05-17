@@ -15,15 +15,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const defaultUrl = platform === 'claude' ? 'https://claude.ai/new' : 
                        platform === 'chatgpt' ? 'https://chatgpt.com/?model=auto' : 'https://gemini.google.com/app';
                        
-    const storageKey = platform === 'claude' ? 'claudeChatUrl' : 
-                       platform === 'chatgpt' ? 'chatGptUrl' : 'geminiUrl';
-
-    // 3. Fetch configured URL and set it for the side panel to pick up
-    chrome.storage.sync.get([storageKey], (result) => {
-      const targetUrl = result[storageKey] || defaultUrl;
-      chrome.storage.local.set({ activeSidePanelUrl: targetUrl }, () => {
-         sendResponse({ success: true, sidePanel: true });
-      });
+    // 3. Set the new chat URL for the side panel to pick up
+    chrome.storage.local.set({ activeSidePanelUrl: defaultUrl }, () => {
+       sendResponse({ success: true, sidePanel: true });
     });
 
     return true; 

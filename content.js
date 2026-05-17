@@ -152,29 +152,18 @@
         const formattedPrompt = `Source: ${document.title}\nURL: ${window.location.href}\n\n${selectedText}`;
 
         try {
-            // Check if Claude URL is configured
-            chrome.storage.sync.get(['claudeChatUrl'], (result) => {
-                if (chrome.runtime.lastError || !result || !result.claudeChatUrl) {
-                    showToast('⚠️ Set your Claude chat URL in extension settings first!', true);
-                    removeButtons();
-                    return;
-                }
+            // Store the prompt for the Claude inject script to pick up
+            chrome.storage.local.set({ pendingPrompt: formattedPrompt }, () => {
+                navigator.clipboard.writeText(formattedPrompt).catch(() => { });
 
-                // Store the prompt for the Claude inject script to pick up
-                chrome.storage.local.set({ pendingPrompt: formattedPrompt }, () => {
-                    // Also copy to clipboard as fallback
-                    navigator.clipboard.writeText(formattedPrompt).catch(() => { });
-
-                    // Open Claude chat via background script
-                    chrome.runtime.sendMessage({ action: 'openClaudeChat' }, (response) => {
-                        if (chrome.runtime.lastError || !response?.success) {
-                            window.open(result.claudeChatUrl, '_blank', 'popup,width=650,height=750');
-                            showToast('✓ Opening Claude — sending your JD...');
-                        } else {
-                            showToast('✓ Opening Claude — sending your JD...');
-                        }
-                        removeButtons(); // Remove buttons after click
-                    });
+                // Open Claude chat via background script
+                chrome.runtime.sendMessage({ action: 'openClaudeChat' }, (response) => {
+                    if (chrome.runtime.lastError || !response?.success) {
+                        showToast('✓ Opening Claude...', true);
+                    } else {
+                        showToast('✓ Opening Claude...');
+                    }
+                    removeButtons(); // Remove buttons after click
                 });
             });
         } catch (error) {
@@ -200,31 +189,22 @@
         const urlStorageKey = platformName === 'ChatGPT' ? 'chatGptUrl' : 'geminiUrl';
 
         try {
-            // Check if platform URL is configured
-            chrome.storage.sync.get([urlStorageKey], (result) => {
-                if (chrome.runtime.lastError || !result || !result[urlStorageKey]) {
-                    showToast(`⚠️ Set your ${platformName} chat URL in extension settings first!`, true);
-                    removeButtons();
-                    return;
-                }
+            setButtonProcessing(btn, 'Sending...');
 
-                setButtonProcessing(btn, 'Sending...');
+            const textWithReference = `Source: ${document.title}\nURL: ${window.location.href}\n\n${selectedText}`;
 
-                const textWithReference = `Source: ${document.title}\nURL: ${window.location.href}\n\n${selectedText}`;
+            // Store the raw text for the other platform's inject script
+            chrome.storage.local.set({ [storageKey]: textWithReference }, () => {
+                navigator.clipboard.writeText(textWithReference).catch(() => { });
 
-                // Store the raw text for the other platform's inject script
-                chrome.storage.local.set({ [storageKey]: textWithReference }, () => {
-                    navigator.clipboard.writeText(textWithReference).catch(() => { });
-
-                    // Send to background to open/focus tab
-                    chrome.runtime.sendMessage({ action: actionName }, (response) => {
-                        if (chrome.runtime.lastError || !response?.success) {
-                            showToast(`⚠️ Failed to open ${platformName}`, true);
-                        } else {
-                            showToast(`✓ Opening ${platformName}...`);
-                        }
-                        removeButtons(); // Remove buttons after click
-                    });
+                // Send to background to open/focus tab
+                chrome.runtime.sendMessage({ action: actionName }, (response) => {
+                    if (chrome.runtime.lastError || !response?.success) {
+                        showToast(`⚠️ Failed to open ${platformName}`, true);
+                    } else {
+                        showToast(`✓ Opening ${platformName}...`);
+                    }
+                    removeButtons(); // Remove buttons after click
                 });
             });
         } catch (error) {
