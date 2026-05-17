@@ -73,19 +73,17 @@
         try {
             editor.focus();
 
-            navigator.clipboard.writeText(prompt).then(() => {
-                if (document.execCommand('insertText', false, prompt)) {
-                    log('execCommand success');
-                    showToast('✓ Prompt ready — click Send when ready!', true);
-                    return;
-                }
-
-                // Event fallback
-                editor.innerHTML = `<p>${prompt.replace(/\\n/g, '<br>')}</p>`;
-                const inputEvent = new Event('input', { bubbles: true });
-                editor.dispatchEvent(inputEvent);
+            if (document.execCommand('insertText', false, prompt)) {
+                log('execCommand success');
                 showToast('✓ Prompt ready — click Send when ready!', true);
-            });
+                return;
+            }
+
+            // Event fallback
+            editor.innerHTML = `<p>${prompt.replace(/\\n/g, '<br>')}</p>`;
+            const inputEvent = new Event('input', { bubbles: true });
+            editor.dispatchEvent(inputEvent);
+            showToast('✓ Prompt ready — click Send when ready!', true);
         } catch (e) {
             clipboardFallback(prompt);
         }

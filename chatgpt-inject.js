@@ -71,29 +71,23 @@
         log('Editor found, injecting prompt...');
         editor.focus();
 
-        // React controlled components often need the setter to be called or precise events
         try {
-            // Write to clipboard and paste
-            navigator.clipboard.writeText(prompt).then(() => {
-                editor.focus();
-                
-                // Strategy 1: document.execCommand
-                if (document.execCommand('insertText', false, prompt)) {
-                   log('Strategy 1: execCommand successful');
-                   showToast('✓ Prompt ready — click Send when ready!', true);
-                   return;
-                }
+            // Strategy 1: document.execCommand
+            if (document.execCommand('insertText', false, prompt)) {
+               log('Strategy 1: execCommand successful');
+               showToast('✓ Prompt ready — click Send when ready!', true);
+               return;
+            }
 
-                // Strategy 2: Synthetic input event
-                editor.value = prompt;
-                editor.innerHTML = `<p>${prompt.replace(/\\n/g, '<br>')}</p>`;
-                
-                ['input', 'change'].forEach(eventName => {
-                    editor.dispatchEvent(new Event(eventName, { bubbles: true }));
-                });
-                
-                showToast('✓ Prompt ready — click Send when ready!', true);
+            // Strategy 2: Synthetic input event
+            editor.value = prompt;
+            editor.innerHTML = `<p>${prompt.replace(/\\n/g, '<br>')}</p>`;
+            
+            ['input', 'change'].forEach(eventName => {
+                editor.dispatchEvent(new Event(eventName, { bubbles: true }));
             });
+            
+            showToast('✓ Prompt ready — click Send when ready!', true);
         } catch (e) {
             clipboardFallback(prompt);
         }
